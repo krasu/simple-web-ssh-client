@@ -4,7 +4,7 @@
  * Time: 8:27 AM
  */
 var instance,
-    io = require('./socket.io')(),
+    io = require('./socket.io'),
     uuidGen = require('node-uuid'),
     pty = require('pty.js')
 
@@ -14,18 +14,14 @@ module.exports = (function () {
 })()
 
 function TerminalManager() {
-//    if (!(this instanceof TerminalManager)) return new TerminalManager();
-//    if (instance instanceof TerminalManager) return instance
-
     this.terminals = {}
 }
 
 TerminalManager.prototype.create = function (id, username, servername) {
-//    var term = pty.spawn('zsh')
     var term = pty.spawn('ssh', [username + '@' + servername]);
 
     term.on('data', function (data) {
-        io.of('/terminals').in(id).emit('data', data);
+        io().of('/terminals').in(id).emit('data', data);
     });
 
     console.log(''

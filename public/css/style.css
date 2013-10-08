@@ -10,3 +10,10 @@ a {
 #terminals {
     margin-top: 50px;
 }
+
+.tab-pane > .header {
+    background-color: #CCC;
+    height: 1em;
+    padding: 5px;
+    box-sizing: content-box;
+}

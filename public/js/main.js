@@ -4,40 +4,66 @@
  * Time: 9:43 AM
  */
 $(function () {
+    var container = $('#terminals')
+    var navTabs = container.find('.nav-tabs')
+    var tabs = container.find('.tab-content')
+
     $('.predefined a').on('click', function () {
         var params = $(this).html().split('@')
         createTerminal(params[0], params[1])
     })
-})
 
-function createTerminal(username, servername) {
-    var container = $('#terminals')
-    var socket = io.connect(window.location.origin + '/terminals', {
-        'force new connection': true,
-        query: 'username=' + username + '&servername=' + servername
+    $('.connect').on('click', function () {
+        var params = $('#server-string').val().split('@')
+        createTerminal(params[0], params[1])
     })
 
-    socket.on('connect', function () {
-        var term = new Terminal({
-            cols: 80,
-            rows: 24,
-            screenKeys: true
-        });
+    $('.nav-tabs').on('click', 'a', function (e) {
+        e.preventDefault();
+        $(this).tab('show');
+    })
 
-        term.on('data', function (data) {
-            socket.emit('data', data);
-        });
-        term.on('title', function (title) {
-            document.title = title;
-        });
-        term.open(container[0]);
+    function createTab(username, servername) {
+        var tabId = (username + '@' + servername).replace(/[^0-9a-z-_]+/ig, '_')
+        $('<li><a href="#' + tabId + '" data-toggle="tab">' + username + '@' + servername + '</a></li>').appendTo(navTabs)
+        $('<div class="tab-pane" id="' + tabId + '"><div class="header"></div><div class="terminal"></div></div>').appendTo(tabs)
+        navTabs.find('a:last').tab('show');
+    }
 
-        socket.on('data', function (data) {
-            term.write(data);
-        });
+    function createTerminal(username, servername) {
+        if (!username || !servername) return
 
-        socket.on('disconnect', function () {
-            term.destroy();
+        var socket = io.connect(window.location.origin + '/terminals', {
+            'force new connection': true,
+            query: 'username=' + username + '&servername=' + servername
+        })
+
+        socket.on('connect', function () {
+            var term = new Terminal({
+                cols: 80,
+                rows: 24,
+                screenKeys: true
+            }), tab;
+
+            term.on('data', function (data) {
+                socket.emit('data', data);
+            });
+            term.on('title', function (title) {
+                tab.find('.header').html(title);
+            });
+
+            createTab(username, servername)
+            tab = tabs.find('.tab-pane:last')
+            term.open(tab.find('.terminal')[0]);
+
+            socket.on('data', function (data) {
+                term.write(data);
+            });
+
+            socket.on('disconnect', function () {
+                term.destroy();
+                container.find('.nav-tabs a [href="#' + tabId + '"]').remove()
+            });
         });
-    });
-}
+    }
+})
