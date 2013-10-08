@@ -1,49 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title><%= title %></title>
-	<link rel='stylesheet' href='/stylesheets/style.css'/>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/css/bootstrap.css'/>
+    <link rel='stylesheet' href='/css/style.css'/>
 </head>
-<body>
-<ul>
-	<li>ssh nethack@alt.org</li>
-	<li>ssh acehack@acehack.de</li>
-</ul>
-<div id="terminal"></div>
+<body class="container">
+<div class="row">
+    <div class="col-md-4">
+        <div class="dropdown">
+            <span class="btn btn-default" data-toggle="dropdown">Choose Predefined Server</span>
+            <ul class="dropdown-menu predefined" role="menu">
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="#">nethack@alt.org</a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="#">acehack@acehack.de</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-3 col-md-offset-5">
+        <div class="form-inline">
+            <div class="form-group">
+                <input type="text" class="form-control" id="server-string" placeholder="username@server">
+            </div>
+            <span class="btn btn-default">Connect</span>
+        </div>
+    </div>
+</div>
+
+<div id="terminals"></div>
 </body>
 <script type="text/javascript" src="/socket.io/socket.io.js"></script>
-<script src="/term.js"></script>
-<script type="text/javascript">
-	window.addEventListener('load', function () {
-		var socket = io.connect(window.location.origin, {
-			'force new connection': true
-		})
-
-		socket.on('connect', function () {
-			var term = new Terminal({
-				cols: 80,
-				rows: 24,
-				screenKeys: true
-			});
-
-			term.on('data', function (data) {
-				socket.emit('data', data);
-			});
-
-			term.on('title', function (title) {
-				document.title = title;
-			});
-
-			term.open(document.body);
-
-			socket.on('data', function (data) {
-				term.write(data);
-			});
-
-			socket.on('disconnect', function () {
-				term.destroy();
-			});
-		});
-	}, false);
-</script>
+<script type="text/javascript" src="/term.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/bootstrap.js"></script>
+<script type="text/javascript" src="/js/main.js"></script>
 </html>

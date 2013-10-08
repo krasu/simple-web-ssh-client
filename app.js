@@ -5,7 +5,6 @@
 var http = require('http'),
     connect = require('connect'),
     express = require('express'),
-    io = require('socket.io'),
     terminal = require('term.js'),
     path = require('path');
 
@@ -53,15 +52,23 @@ if ('development' == app.get('env')) {
 require('./routes/')(app);
 
 var server = http.createServer(app);
-server.listen(app.get('port'));
+var io = require('./utils/socket.io')(server)
+var terminalManager = require('./utils/terminal.manager')
 
-/**
- * Sockets
- */
+io.of('/terminals')
+    .on('connection', function (socket) {
+        var termId = terminalManager.claimId()
+        var term = terminalManager.create(termId, socket.handshake.query.username, socket.handshake.query.servername)
 
-app.locals.io = io.listen(server, {
-    log: false
-});
+        socket.join(termId)
+        socket.on('data', function(data) {
+            term.write(data);
+        });
+
+        socket.on('disconnect', function() {
+            socket = null;
+        });
+    })
 
 server.listen(app.get('port'), function () {
     console.log('Express server listening on port ' + app.get('port'));
