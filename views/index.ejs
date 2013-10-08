@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title><%= title %></title>
+	<link rel='stylesheet' href='/stylesheets/style.css'/>
+</head>
+<body>
+<ul>
+	<li>ssh nethack@alt.org</li>
+	<li>ssh acehack@acehack.de</li>
+</ul>
+<div id="terminal"></div>
+</body>
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script src="/term.js"></script>
+<script type="text/javascript">
+	window.addEventListener('load', function () {
+		var socket = io.connect(window.location.origin, {
+			'force new connection': true
+		})
+
+		socket.on('connect', function () {
+			var term = new Terminal({
+				cols: 80,
+				rows: 24,
+				screenKeys: true
+			});
+
+			term.on('data', function (data) {
+				socket.emit('data', data);
+			});
+
+			term.on('title', function (title) {
+				document.title = title;
+			});
+
+			term.open(document.body);
+
+			socket.on('data', function (data) {
+				term.write(data);
+			});
+
+			socket.on('disconnect', function () {
+				term.destroy();
+			});
+		});
+	}, false);
+</script>
+</html>
