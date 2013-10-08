@@ -24,7 +24,7 @@ $(function () {
     })
 
     function createTab(username, servername) {
-        var tabId = (username + '@' + servername).replace(/[^0-9a-z-_]+/ig, '_')
+        var tabId = (username + '@' + servername).replace(/[^0-9a-z-_]+/ig, '_') + '_' + (new Date()).getTime()
         $('<li><a href="#' + tabId + '" data-toggle="tab">' + username + '@' + servername + '</a></li>').appendTo(navTabs)
         $('<div class="tab-pane" id="' + tabId + '"><div class="header"></div><div class="terminal"></div></div>').appendTo(tabs)
         navTabs.find('a:last').tab('show');
