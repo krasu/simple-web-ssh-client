@@ -11,9 +11,15 @@ a {
     margin-top: 50px;
 }
 
+.nav-tabs > li > a > .remove {
+    color: #F00;
+    padding-left: 10px;
+    font-weight: bold;
+}
+
 .tab-pane > .header {
     background-color: #CCC;
-    height: 1em;
+    height: 18px;
     padding: 5px;
     box-sizing: content-box;
 }

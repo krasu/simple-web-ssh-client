@@ -6,6 +6,8 @@ var http = require('http'),
     connect = require('connect'),
     express = require('express'),
     terminal = require('term.js'),
+    sockjs = require('sockjs'),
+    channelManager = require('./utils/channel.manager'),
     path = require('path');
 
 var app = express(),
@@ -52,24 +54,40 @@ if ('development' == app.get('env')) {
 require('./routes/')(app);
 
 var server = http.createServer(app);
-var io = require('./utils/socket.io')(server)
-var terminalManager = require('./utils/terminal.manager')
+var echo = sockjs.createServer()
 
-io.of('/terminals')
-    .on('connection', function (socket) {
-        var termId = terminalManager.claimId()
-        var term = terminalManager.create(termId, socket.handshake.query.username, socket.handshake.query.servername)
+echo.on('connection', function (conn) {
+    conn.on('data', function (data) {
+        var msg = {}
+        try {
+            msg = JSON.parse(data);
+        } catch (e) {
+        }
 
-        socket.join(termId)
-        socket.on('data', function(data) {
-            term.write(data);
-        });
+        if (msg.event === 'spawn') {
+            channelManager.create(conn, {
+                username: msg.data.username,
+                server: msg.data.server
+            })
+        }
 
-        socket.on('disconnect', function() {
-            socket = null;
-        });
-    })
+        if (msg.event === 'kill') {
+            channelManager.kill(msg.uuid)
+        }
 
+        if (msg.event === 'data' && msg.uuid) {
+            var channel = channelManager.get(msg.uuid)
+            channel.term.write(msg.data);
+        }
+    });
+
+    conn.on('close', function () {
+        channelManager.killAll(conn)
+        conn = null;
+    });
+})
+
+echo.installHandlers(server, {prefix: '/terminals'});
 server.listen(app.get('port'), function () {
     console.log('Express server listening on port ' + app.get('port'));
 });
