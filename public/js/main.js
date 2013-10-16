@@ -168,7 +168,8 @@ $(function () {
         var params = $('#server-string').val().split('@')
         manager({
             username: params[0],
-            server: params[1]
+            server: params[1].split(':')[0],
+            port: params[1].split(':')[1]
         })
     })
 })

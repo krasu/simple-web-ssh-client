@@ -18,7 +18,7 @@ ChannelManager.prototype.get = function (uuid) {
 
 ChannelManager.prototype.killAll = function (conn) {
     var channels = _.filter(this.channels, {connectionId: conn.id})
-    _.each(channels, function(channel) {
+    _.each(channels, function (channel) {
         this.kill(channel.uuid)
     }, this)
 }
@@ -32,8 +32,15 @@ ChannelManager.prototype.kill = function (uuid) {
 
 ChannelManager.prototype.create = function (conn, options) {
     var uuid = uuidGen.v4()
+    var params = []
+    var port = Math.abs(parseInt(options.port))
+    if (!isNaN(port)) {
+        params.push('-p ' + port)
+    }
+    params.push(options.username + '@' + options.server)
+
     var channel = this.channels[uuid] = {
-        term: pty.spawn('ssh', [options.username + '@' + options.server]),
+        term: pty.spawn('ssh', params),
         emitter: new SockEmitter(conn, uuid),
         connectionId: conn.id,
         uuid: uuid

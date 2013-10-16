@@ -68,6 +68,7 @@ echo.on('connection', function (conn) {
             channelManager.create(conn, {
                 username: msg.data.username,
                 server: msg.data.server,
+                port: msg.data.port,
                 clientId: msg.data.clientId
             })
         }
