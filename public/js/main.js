@@ -9,6 +9,7 @@ $(function () {
 
     var TerminalManager = function (container) {
         this.connections = {}
+        this.unclaimed = {}
         this.pending = []
         this.status = 'disconnected'
         this.handlers = container.find('.nav-tabs')
@@ -18,11 +19,26 @@ $(function () {
         return _.bind(this.spawn, this)
     }
 
+    TerminalManager.prototype.genClientId = function () {
+        var id = String.fromCharCode(Math.floor((Math.random() * 25) + 65));
+
+        do {
+            var charCode = Math.floor((Math.random() * 42) + 48);
+            if (charCode < 58 || charCode > 64) {
+                id += String.fromCharCode(charCode);
+            }
+        } while (id.length < 5);
+
+        return id + (new Date()).getTime();
+    };
+
     TerminalManager.prototype.onConnect = function () {
         this.status = 'connected';
-        _.each(this.pending, this.spawn, this)
-        this.pending = []
-    }
+        _.each(this.pending, function (msg) {
+            this.send('spawn', msg);
+        }, this);
+        this.pending = [];
+    };
 
     TerminalManager.prototype.connect = function () {
         if (this.status != 'disconnected') return
@@ -60,15 +76,29 @@ $(function () {
     }
 
     TerminalManager.prototype.spawn = function (credentials) {
+        var clientId = this.genClientId(),
+            unclaimed = this.unclaimed[clientId] = {
+                params: credentials
+            },
+            message = _.merge({}, credentials, {
+                clientId: clientId
+            });
+
         if (this.status != 'connected') {
-            this.pending.push(credentials)
+            this.pending.push(message)
             this.connect()
         } else {
-            this.send('spawn', credentials);
+            this.send('spawn', message);
         }
     }
 
-    TerminalManager.prototype.create = function (uuid, name) {
+    TerminalManager.prototype.create = function (uuid, data) {
+        if (!data.clientId) {
+            return;
+        }
+
+        var params = this.unclaimed[data.clientId].params
+        var name = params.username + '@' + params.server
         var tabId = name.replace(/[^0-9a-z-_]+/ig, '_') + '_' + (new Date()).getTime()
         $(handlerTpl({id: tabId, name: name})).appendTo(this.handlers)
         $(tabTpl({id: tabId})).appendTo(this.tabs)

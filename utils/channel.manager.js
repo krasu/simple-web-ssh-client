@@ -43,7 +43,10 @@ ChannelManager.prototype.create = function (conn, options) {
         channel.emitter.emit('data', data);
     });
 
-    channel.emitter.emit('spawned', options.username + '@' + options.server);
+    channel.emitter.emit('spawned', {
+        clientId: options.clientId
+    });
+
     return channel
 }
 

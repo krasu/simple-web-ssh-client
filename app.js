@@ -67,7 +67,8 @@ echo.on('connection', function (conn) {
         if (msg.event === 'spawn') {
             channelManager.create(conn, {
                 username: msg.data.username,
-                server: msg.data.server
+                server: msg.data.server,
+                clientId: msg.data.clientId
             })
         }
 
