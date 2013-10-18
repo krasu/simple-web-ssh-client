@@ -64,7 +64,7 @@ echo.on('connection', function (conn) {
         } catch (e) {
         }
 
-        if (msg.event === 'spawn') {
+        if (msg.event == 'spawn') {
             channelManager.create(conn, {
                 username: msg.data.username,
                 server: msg.data.server,
@@ -73,14 +73,23 @@ echo.on('connection', function (conn) {
             })
         }
 
-        if (msg.event === 'kill') {
+        if (msg.event == 'kill') {
             channelManager.kill(msg.uuid)
         }
 
-        if (msg.event === 'data' && msg.uuid) {
+        if (msg.uuid) {
             var channel = channelManager.get(msg.uuid)
-            channel.term.write(msg.data);
+            if (!channel) return;
+
+            if (msg.event == 'data') {
+                channel.term.write(msg.data);
+            }
+
+            if (msg.event == 'resize') {
+                channel.term.resize(msg.data.cols, msg.data.rows);
+            }
         }
+
     });
 
     conn.on('close', function () {
