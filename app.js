@@ -3,34 +3,34 @@
  */
 
 var http = require('http'),
-    connect = require('connect'),
-    express = require('express'),
-    terminal = require('term.js'),
-    sockjs = require('sockjs'),
-    channelManager = require('./utils/channel.manager'),
-    path = require('path');
+	connect = require('connect'),
+	express = require('express'),
+	terminal = require('term.js'),
+	sockjs = require('sockjs'),
+	channelManager = require('./utils/channel.manager'),
+	path = require('path');
 
 var app = express(),
-    sessionSecret = 'asdasdas dasd asd',
-    cookieParser = express.cookieParser(sessionSecret),
-    sessionStore = new connect.middleware.session.MemoryStore();
+	sessionSecret = 'asdasdas dasd asd',
+	cookieParser = express.cookieParser(sessionSecret),
+	sessionStore = new connect.middleware.session.MemoryStore();
 
 /**
  * App & Server
  */
 
 app.use(function (req, res, next) {
-    var setHeader = res.setHeader;
-    res.setHeader = function (name) {
-        switch (name) {
-        case 'Cache-Control':
-        case 'Last-Modified':
-        case 'ETag':
-            return;
-        }
-        return setHeader.apply(res, arguments);
-    };
-    next();
+	var setHeader = res.setHeader;
+	res.setHeader = function (name) {
+		switch (name) {
+		case 'Cache-Control':
+		case 'Last-Modified':
+		case 'ETag':
+			return;
+		}
+		return setHeader.apply(res, arguments);
+	};
+	next();
 });
 
 app.use(cookieParser);
@@ -48,7 +48,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // development only
 if ('development' == app.get('env')) {
-    app.use(express.errorHandler());
+	app.use(express.errorHandler());
 }
 
 require('./routes/')(app);
@@ -57,48 +57,56 @@ var server = http.createServer(app);
 var echo = sockjs.createServer()
 
 echo.on('connection', function (conn) {
-    conn.on('data', function (data) {
-        var msg = {}
-        try {
-            msg = JSON.parse(data);
-        } catch (e) {
-        }
+	conn.on('data', function (data) {
+		var msg = {}
+		try {
+			msg = JSON.parse(data);
+		} catch (e) {
+		}
 
-        if (msg.event == 'spawn') {
-            channelManager.create(conn, {
-                username: msg.data.username,
-                server: msg.data.server,
-                port: msg.data.port,
-                clientId: msg.data.clientId
-            })
-        }
+		if (!msg.data || !msg.event) return;
 
-        if (msg.event == 'kill') {
-            channelManager.kill(msg.uuid)
-        }
+		if (msg.event == 'spawn') {
+			channelManager.create(conn, {
+				username: msg.data.username,
+				server: msg.data.server,
+				port: msg.data.port,
+				clientId: msg.data.clientId
+			})
+		}
 
-        if (msg.uuid) {
-            var channel = channelManager.get(msg.uuid)
-            if (!channel) return;
+		if (msg.event == 'kill') {
+			channelManager.kill(msg.uuid)
+		}
 
-            if (msg.event == 'data') {
-                channel.term.write(msg.data);
-            }
+		if (msg.uuid) {
+			var channel = channelManager.get(msg.uuid),
+				size
 
-            if (msg.event == 'resize') {
-                channel.term.resize(msg.data.cols, msg.data.rows);
-            }
-        }
+			if (!channel) return;
+			if (msg.data.cols && msg.data.rows) {
 
-    });
+			}
 
-    conn.on('close', function () {
-        channelManager.killAll(conn)
-        conn = null;
-    });
+			if (msg.event == 'data') {
+				channel.term.write(msg.data.input);
+				channelManager.resize(msg.uuid, msg.data);
+			}
+
+			if (msg.event == 'resize') {
+				channelManager.resize(msg.uuid, msg.data);
+			}
+		}
+
+	});
+
+	conn.on('close', function () {
+		channelManager.killAll(conn)
+		conn = null;
+	});
 })
 
 echo.installHandlers(server, {prefix: '/terminals'});
 server.listen(app.get('port'), function () {
-    console.log('Express server listening on port ' + app.get('port'));
+	console.log('Express server listening on port ' + app.get('port'));
 });

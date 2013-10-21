@@ -30,6 +30,15 @@ ChannelManager.prototype.kill = function (uuid) {
     delete this.channels[uuid]
 }
 
+ChannelManager.prototype.resize = function (uuid, size) {
+    if (!this.channels[uuid] || !_.isObject(size)) return;
+	_.invoke(size, parseInt, 10);
+	_.invoke(size, Math.abs);
+    if (isNaN(size.cols) || isNaN(size.rows) || !size.cols || !size.rows) return;
+
+    this.channels[uuid].term.resize(size.cols, size.rows);
+}
+
 ChannelManager.prototype.create = function (conn, options) {
     var uuid = uuidGen.v4()
     var params = []
@@ -47,7 +56,11 @@ ChannelManager.prototype.create = function (conn, options) {
     }
 
     channel.term.on('data', function (data) {
-        channel.emitter.emit('data', data);
+        channel.emitter.emit('data', {
+	        input: data,
+	        cols: channel.term.cols,
+	        rows: channel.term.rows
+        });
     });
 
     channel.emitter.emit('spawned', {
